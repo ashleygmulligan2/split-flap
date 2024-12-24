@@ -1,0 +1,17 @@
+.App {
+  min-height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ticker-container {
+  display: grid;
+  grid-template-rows: repeat(6, auto);
+  gap: 10px;
+  padding: 20px;
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
