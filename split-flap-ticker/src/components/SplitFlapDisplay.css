@@ -1,0 +1,63 @@
+.split-flap-display {
+  display: flex;
+  gap: 10px;
+}
+
+.split-flap-cell {
+  width: 30px;
+  height: 50px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 400px;
+  border-radius: 0px;
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  padding: 15px;
+}
+
+.split-flap-cell::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  right: 15px;
+  height: 1px;
+  background: #2a2a2a;
+  z-index: 4;
+}
+
+.split-flap-cell span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: #e0e0e0;
+  font-family: "Courier New", monospace;
+  font-size: 2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.split-flap-cell.flipping {
+  animation: flip 0.5s linear;
+}
+
+@keyframes flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(360deg);
+  }
+}
+
+.split-flap-price {
+  margin-left: auto;
+  display: flex;
+}
