@@ -43,19 +43,19 @@ const SplitFlapDisplay = ({ symbol, price, change, onFlippingComplete }) => {
   const priceText = `$${Math.ceil(price).toLocaleString()}`;
 
   // Define a color mapping for each ticker
-  const tickerColors = {
-    BTC: "#f7931a", // Bitcoin
-    ADA: "#0033ad", // Cardano
-    CIFR: "#ff6600", // Example color for CIFR
-    MSTR: "#ff0000", // Example color for MSTR
-    TSLA: "#cc0000", // Example color for TSLA
-    FBTC: "#00cc00", // Example color for FBTC
-    SPX: "#0000cc", // Example color for SPX
-    DJI: "#cccc00", // Example color for DJI
-  };
+  // const tickerColors = {
+  //   BTC: "#f7931a", // Bitcoin
+  //   ADA: "#0033ad", // Cardano
+  //   CIFR: "#ff6600", // Example color for CIFR
+  //   MSTR: "#ff0000", // Example color for MSTR
+  //   TSLA: "#cc0000", // Example color for TSLA
+  //   FBTC: "#00cc00", // Example color for FBTC
+  //   SPX: "#0000cc", // Example color for SPX
+  //   DJI: "#cccc00", // Example color for DJI
+  // };
 
   // Get the color for the current ticker symbol
-  const tickerColor = tickerColors[symbol] || "#2a2a2a"; // Default color if not specified
+  // const tickerColor = tickerColors[symbol] || "#2a2a2a"; // Default color if not specified
 
   // Ensure the ticker symbol is at least 4 characters long
   const paddedSymbol = symbol.padEnd(4, " ");
@@ -67,7 +67,7 @@ const SplitFlapDisplay = ({ symbol, price, change, onFlippingComplete }) => {
       className="split-flap-display"
       style={{ padding: "10px", borderRadius: "8px" }}
     >
-      <SplitFlapCell target=" " style={{ backgroundColor: tickerColor }} />
+      {/* <SplitFlapCell target=" " style={{ backgroundColor: tickerColor }} /> */}
       {/* Ticker Symbol */}
       {paddedSymbol.split("").map((char, index) => (
         <SplitFlapCell
@@ -104,7 +104,6 @@ const SplitFlapDisplay = ({ symbol, price, change, onFlippingComplete }) => {
           onComplete={onFlippingComplete}
         />
       ))}
-      <SplitFlapCell target=" " style={{ backgroundColor: tickerColor }} />
     </div>
   );
 };

@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import SplitFlapDisplay from "./components/SplitFlapDisplay";
 
+// Temporarily override NODE_ENV for testing
+process.env.NODE_ENV = "production";
+
 // Replace 'YOUR_API_KEY' with your actual Alpha Vantage API key
 const ALPHA_VANTAGE_API_KEY = "D1OVGLNPM5ZHM0K1";
 
@@ -18,7 +21,7 @@ const DISPLAY_NAMES = {
   cardano: "ADA",
 };
 
-const REFRESH_INTERVAL = 6000; // 1 minute
+const REFRESH_INTERVAL = 600000; // 1 minute
 
 const generateMockData = () => {
   return {
@@ -56,17 +59,89 @@ function App() {
   const [activeFlips, setActiveFlips] = useState(0);
   const audioRef = useRef(new Audio("/sound.m4a"));
 
+  const useRealApi = process.env.REACT_APP_USE_REAL_API === "true";
+
   const fetchAllPrices = () => {
-    const { cryptoPrices, cryptoChanges, stockPrices, stockChanges } =
-      generateMockData();
-    setPrices({ ...cryptoPrices, ...stockPrices });
-    setChanges({ ...cryptoChanges, ...stockChanges });
+    if (!useRealApi) {
+      // Use demo data in development
+      const { cryptoPrices, cryptoChanges, stockPrices, stockChanges } =
+        generateMockData();
+      setPrices({ ...cryptoPrices, ...stockPrices });
+      setChanges({ ...cryptoChanges, ...stockChanges });
+    } else {
+      // Use real API
+      Promise.all([fetchCryptoPrices(), fetchStockPrices()])
+        .then(([cryptoData, stockData]) => {
+          setPrices({ ...cryptoData.prices, ...stockData.prices });
+          setChanges({ ...cryptoData.changes, ...stockData.changes });
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
+    }
+
     setActiveFlips(SYMBOLS.crypto.length + SYMBOLS.stocks.length);
 
     if (soundEnabled) {
       audioRef.current.play().catch((error) => {
         console.error("Audio play failed:", error);
       });
+    }
+  };
+
+  // Function to fetch crypto prices from the real API
+  const fetchCryptoPrices = async () => {
+    try {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${SYMBOLS.crypto.join(
+          ","
+        )}&vs_currencies=usd&include_24hr_change=true`
+      );
+      const data = await response.json();
+
+      const prices = {};
+      const changes = {};
+
+      SYMBOLS.crypto.forEach((crypto) => {
+        prices[crypto] = data[crypto].usd;
+        changes[crypto] = data[crypto].usd_24h_change;
+      });
+
+      return { prices, changes };
+    } catch (error) {
+      console.error("Error fetching crypto prices:", error);
+      return { prices: {}, changes: {} };
+    }
+  };
+
+  // Function to fetch stock prices from the real API
+  const fetchStockPrices = async () => {
+    try {
+      const prices = {};
+      const changes = {};
+
+      for (const symbol of SYMBOLS.stocks) {
+        const response = await fetch(
+          `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&apikey=${ALPHA_VANTAGE_API_KEY}`
+        );
+        const data = await response.json();
+
+        const timeSeries = data["Time Series (1min)"];
+        const latestTime = Object.keys(timeSeries)[0];
+        const latestData = timeSeries[latestTime];
+
+        prices[symbol] = parseFloat(latestData["1. open"]);
+        changes[symbol] =
+          ((parseFloat(latestData["4. close"]) -
+            parseFloat(latestData["1. open"])) /
+            parseFloat(latestData["1. open"])) *
+          100;
+      }
+
+      return { prices, changes };
+    } catch (error) {
+      console.error("Error fetching stock prices:", error);
+      return { prices: {}, changes: {} };
     }
   };
 
@@ -91,6 +166,10 @@ function App() {
     });
   };
 
+  const formatPrice = (price) => {
+    return price < 100 ? price.toFixed(1) : price.toFixed(0);
+  };
+
   return (
     <div className="App">
       <div className="ticker-container">
@@ -98,7 +177,7 @@ function App() {
           <SplitFlapDisplay
             key={symbol}
             symbol={DISPLAY_NAMES[symbol] || symbol.toUpperCase()}
-            price={prices[symbol]?.toFixed(2) || "0.00"}
+            price={formatPrice(prices[symbol] || 0)}
             change={changes[symbol]}
             onFlippingComplete={handleFlippingComplete}
           />
