@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import SplitFlapDisplay from "./components/SplitFlapDisplay";
 
-// Temporarily override NODE_ENV for testing
-process.env.NODE_ENV = "production";
-
 // Replace 'YOUR_API_KEY' with your actual Alpha Vantage API key
 const ALPHA_VANTAGE_API_KEY = "D1OVGLNPM5ZHM0K1";
 
@@ -21,7 +18,7 @@ const DISPLAY_NAMES = {
   cardano: "ADA",
 };
 
-const REFRESH_INTERVAL = 600000; // 1 minute
+const REFRESH_INTERVAL = 300000; // 5 minutes
 
 const generateMockData = () => {
   return {
@@ -58,8 +55,10 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [activeFlips, setActiveFlips] = useState(0);
   const audioRef = useRef(new Audio("/sound.m4a"));
+  const [lastStockFetchTime, setLastStockFetchTime] = useState(0);
 
-  const useRealApi = process.env.REACT_APP_USE_REAL_API === "true";
+  // Use a custom environment variable to determine API usage
+  const useRealApi = true;
 
   const fetchAllPrices = () => {
     if (!useRealApi) {
@@ -70,14 +69,33 @@ function App() {
       setChanges({ ...cryptoChanges, ...stockChanges });
     } else {
       // Use real API
-      Promise.all([fetchCryptoPrices(), fetchStockPrices()])
-        .then(([cryptoData, stockData]) => {
-          setPrices({ ...cryptoData.prices, ...stockData.prices });
-          setChanges({ ...cryptoData.changes, ...stockData.changes });
+      fetchCryptoPrices()
+        .then((cryptoData) => {
+          setPrices((prevPrices) => ({ ...prevPrices, ...cryptoData.prices }));
+          setChanges((prevChanges) => ({
+            ...prevChanges,
+            ...cryptoData.changes,
+          }));
         })
         .catch((error) => {
-          console.error("Error fetching data:", error);
+          console.error("Error fetching crypto prices:", error);
         });
+
+      // Fetch stock prices less frequently
+      if (Date.now() - lastStockFetchTime > REFRESH_INTERVAL) {
+        fetchStockPrices()
+          .then((stockData) => {
+            setPrices((prevPrices) => ({ ...prevPrices, ...stockData.prices }));
+            setChanges((prevChanges) => ({
+              ...prevChanges,
+              ...stockData.changes,
+            }));
+            setLastStockFetchTime(Date.now());
+          })
+          .catch((error) => {
+            console.error("Error fetching stock prices:", error);
+          });
+      }
     }
 
     setActiveFlips(SYMBOLS.crypto.length + SYMBOLS.stocks.length);
@@ -121,10 +139,36 @@ function App() {
       const changes = {};
 
       for (const symbol of SYMBOLS.stocks) {
-        const response = await fetch(
-          `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&apikey=${ALPHA_VANTAGE_API_KEY}`
-        );
-        const data = await response.json();
+        let response;
+        let data;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+          response = await fetch(
+            `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&apikey=${ALPHA_VANTAGE_API_KEY}`
+          );
+          data = await response.json();
+
+          if (data["Time Series (1min)"]) {
+            break;
+          }
+
+          console.error(
+            `Attempt ${attempts + 1} failed for symbol: ${symbol}`,
+            data
+          );
+          attempts++;
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+        }
+
+        if (!data["Time Series (1min)"]) {
+          console.error(
+            `No data for symbol after ${maxAttempts} attempts: ${symbol}`,
+            data
+          );
+          continue;
+        }
 
         const timeSeries = data["Time Series (1min)"];
         const latestTime = Object.keys(timeSeries)[0];

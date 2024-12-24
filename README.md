@@ -60,7 +60,7 @@ The Split Flap Ticker is a web application that simulates a split-flap display, 
 
 ## Contributing
 
-Founding developers are ashley@seeking-satoshi.info and cody@seeking-satoshi.info
+Founding developers are ashley@seekingsatoshi.info and cody@seekingsatoshi.info
 
 Contributions are welcome! Please fork the repository and submit a pull request for any improvements or bug fixes.
 
