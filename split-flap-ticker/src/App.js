@@ -1,16 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import SplitFlapDisplay from "./components/SplitFlapDisplay";
-
-// Replace 'YOUR_API_KEY' with your actual Alpha Vantage API key
-const ALPHA_VANTAGE_API_KEY = "D1OVGLNPM5ZHM0K1";
-
 // CoinGecko API key
 const COINGECKO_API_KEY = "CG-B9dykQhgqEKR5vrUKsCvBzap";
 
+// Replace 'YOUR_FINNHUB_API_KEY' with your actual Finnhub API key
+const FINNHUB_API_KEY = "ctlf8j1r01qv7qq24gv0ctlf8j1r01qv7qq24gvg";
+
 const SYMBOLS = {
   crypto: ["bitcoin", "cardano"], // CoinGecko IDs
-  stocks: ["CIFR", "MSTR", "TSLA", "FBTC", "SPX", "DJI"], // Stock symbols
+  stocks: ["CIFR", "MSTR", "TSLA", "FBTC"], // Stock symbols
 };
 
 const DISPLAY_NAMES = {
@@ -139,47 +138,18 @@ function App() {
       const changes = {};
 
       for (const symbol of SYMBOLS.stocks) {
-        let response;
-        let data;
-        let attempts = 0;
-        const maxAttempts = 3;
+        const response = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+        );
+        const data = await response.json();
 
-        while (attempts < maxAttempts) {
-          response = await fetch(
-            `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&apikey=${ALPHA_VANTAGE_API_KEY}`
-          );
-          data = await response.json();
-
-          if (data["Time Series (1min)"]) {
-            break;
-          }
-
-          console.error(
-            `Attempt ${attempts + 1} failed for symbol: ${symbol}`,
-            data
-          );
-          attempts++;
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
-        }
-
-        if (!data["Time Series (1min)"]) {
-          console.error(
-            `No data for symbol after ${maxAttempts} attempts: ${symbol}`,
-            data
-          );
+        if (!data.c) {
+          console.error(`No data for symbol: ${symbol}`, data);
           continue;
         }
 
-        const timeSeries = data["Time Series (1min)"];
-        const latestTime = Object.keys(timeSeries)[0];
-        const latestData = timeSeries[latestTime];
-
-        prices[symbol] = parseFloat(latestData["1. open"]);
-        changes[symbol] =
-          ((parseFloat(latestData["4. close"]) -
-            parseFloat(latestData["1. open"])) /
-            parseFloat(latestData["1. open"])) *
-          100;
+        prices[symbol] = data.c; // Current price
+        changes[symbol] = ((data.c - data.pc) / data.pc) * 100; // Percentage change from previous close
       }
 
       return { prices, changes };
@@ -211,7 +181,8 @@ function App() {
   };
 
   const formatPrice = (price) => {
-    return price < 100 ? price.toFixed(1) : price.toFixed(0);
+    console.log("Formatting price:", price);
+    return price < 100 ? price.toFixed(2) : price.toFixed(0);
   };
 
   return (

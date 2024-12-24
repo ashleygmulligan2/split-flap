@@ -40,7 +40,9 @@ const SplitFlapDisplay = ({ symbol, price, change, onFlippingComplete }) => {
   const changeColor = change > 0 ? "#009a44" : "#da291c";
   const changeSign = change < 0 ? "-" : " ";
   const changeText = `${Math.abs(change).toFixed(1)}%`;
-  const priceText = `$${Math.ceil(price).toLocaleString()}`;
+
+  // Use the price directly without Math.ceil
+  const priceText = `$${Number(price).toLocaleString()}`;
 
   // Define a color mapping for each ticker
   // const tickerColors = {
