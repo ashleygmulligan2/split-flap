@@ -181,7 +181,7 @@ function App() {
   };
 
   const formatPrice = (price) => {
-    console.log("Formatting price:", price);
+    // console.log("Formatting price:", price);
     return price < 100 ? price.toFixed(2) : price.toFixed(0);
   };
 

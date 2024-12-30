@@ -44,7 +44,7 @@
   border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.split-flap-cell.flipping {
+.split-flap-cell.flipping span {
   animation: flip 0.5s linear;
 }
 
